@@ -1,0 +1,18 @@
+# Ignore heavy model weights (prevents GitHub upload errors)
+*.pt
+*.pth
+*.bin
+
+# Ignore Python's temporary calculation files
+**/__pycache__/
+*.py[cod]
+
+# Ignore folder-specific checkpoints if they exist
+checkpoint-*/
+.ipynb_checkpoints/
+
+# Ignore local environment and system files
+venv/
+.env
+.DS_Store
+Thumbs.db
