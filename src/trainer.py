@@ -92,8 +92,12 @@ class Trainer:
         f1 = f1_score(all_labels, all_preds, average='weighted')
         return avg_loss, accuracy, f1, all_preds, all_labels
 
-    def train(self, epochs, save_best=False):
-        best_val_acc = 0
+    def train(self, epochs, save_best=False, best_metric='val_acc'):
+        best_score = float('-inf')
+        self.best_checkpoint_path = f"{self.output_dir}/best_model.pt"
+        valid_metrics = {'val_acc', 'val_f1'}
+        if best_metric not in valid_metrics:
+            raise ValueError(f"best_metric must be one of {valid_metrics}")
 
         for epoch in range(epochs):
             print(f"\nEpoch {epoch + 1}/{epochs}")
@@ -108,22 +112,57 @@ class Trainer:
             print(f"Train Loss: {train_loss:.4f}, Acc: {train_acc:.4f}")
             print(f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, F1: {val_f1:.4f}")
 
-            if save_best and val_acc > best_val_acc:
-                best_val_acc = val_acc
-                self.save_checkpoint(f"{self.output_dir}/best_model.pt")
+            score = val_acc if best_metric == 'val_acc' else val_f1
+            if save_best and score > best_score:
+                best_score = score
+                self.save_checkpoint(
+                    self.best_checkpoint_path,
+                    epoch=epoch + 1,
+                    val_loss=val_loss,
+                    val_acc=val_acc,
+                    val_f1=val_f1,
+                    best_metric=best_metric
+                )
 
         if self.save_artifacts:
             self.save_history()
             self.plot_training_curves()
 
-    def save_checkpoint(self, path):
+    def save_checkpoint(self, path, epoch=None, val_loss=None, val_acc=None,
+                        val_f1=None, best_metric=None):
         if not self.save_artifacts:
             return
         torch.save({
             'model_state_dict': self.model.state_dict(),
-            'optimizer_state_dict': self.optimizer.state_dict()
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'epoch': epoch,
+            'val_loss': val_loss,
+            'val_acc': val_acc,
+            'val_f1': val_f1,
+            'best_metric': best_metric
         }, path)
         print(f"Saved checkpoint to {path}")
+
+    def load_checkpoint(self, path=None):
+        if path is None:
+            path = getattr(self, 'best_checkpoint_path', f"{self.output_dir}/best_model.pt")
+
+        checkpoint = torch.load(path, map_location=self.device)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+        epoch = checkpoint.get('epoch')
+        val_acc = checkpoint.get('val_acc')
+        val_f1 = checkpoint.get('val_f1')
+        best_metric = checkpoint.get('best_metric')
+        if epoch is not None and val_acc is not None and val_f1 is not None:
+            print(
+                f"Loaded checkpoint from epoch {epoch} "
+                f"with val acc {val_acc:.4f}, val F1 {val_f1:.4f} "
+                f"(selected by {best_metric})"
+            )
+        else:
+            print(f"Loaded checkpoint from {path}")
 
     def save_history(self):
         if not self.save_artifacts:
