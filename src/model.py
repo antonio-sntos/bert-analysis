@@ -31,7 +31,7 @@ class BERTSentimentClassifier(nn.Module):
         return self.classifier(pooled_output)
 
     def unfreeze_layers(self, n_layers):
-        """Unfreeze last n transformer layers."""
+        """Unfreeze the last n transformer layers and the pooler."""
         for param in self.bert.embeddings.parameters():
             param.requires_grad = False
         for i, layer in enumerate(self.bert.encoder.layer):
@@ -41,6 +41,8 @@ class BERTSentimentClassifier(nn.Module):
             else:
                 for param in layer.parameters():
                     param.requires_grad = False
+        for param in self.bert.pooler.parameters():
+            param.requires_grad = True
 
 
 class BaselineLSTM(nn.Module):
