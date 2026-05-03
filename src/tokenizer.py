@@ -27,7 +27,7 @@ class BERTTokenizer:
 
         Returns a dict with `input_ids` and `attention_mask` as PyTorch tensors.
         """
-        return self.tokenizer.encode_plus(
+        return self.tokenizer(
             text,
             add_special_tokens=True,
             max_length=max_length,
