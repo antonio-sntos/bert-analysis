@@ -1,29 +1,23 @@
-"""Lightweight training helpers used by the notebooks.
+"""Training and evaluation code used by the notebook."""
 
-Trainer wraps a model, dataloaders and a simple training loop. The
-implementation focuses on clarity rather than performance.
-"""
-
-import torch
-import torch.nn as nn
-from tqdm import tqdm
-import os
 import json
-from sklearn.metrics import accuracy_score, f1_score, classification_report, confusion_matrix
+import os
+
 import matplotlib.pyplot as plt
 import seaborn as sns
+import torch
+import torch.nn as nn
+from sklearn.metrics import (accuracy_score, classification_report,
+                             confusion_matrix, f1_score)
+from tqdm import tqdm
 
 
 class Trainer:
-    """Simple trainer: train loop, eval, and a tiny checkpoint helper.
-
-    The class keeps training history and saves light artifacts (plots,
-    history JSON). It is intentionally small so it's easy to read in
-    the notebooks.
-    """
+    """Small trainer class so we do not repeat the same loop everywhere."""
 
     def __init__(self, model, train_loader, val_loader, test_loader,
-                 device, learning_rate=2e-5, output_dir='results', save_artifacts=True):
+                 device, learning_rate=2e-5, output_dir='results',
+                 save_artifacts=True):
         self.model = model.to(device)
         self.train_loader = train_loader
         self.val_loader = val_loader
@@ -37,10 +31,15 @@ class Trainer:
 
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
-        self.history = {'train_loss': [], 'val_loss': [],
-                       'train_acc': [], 'val_acc': []}
+        self.history = {
+            'train_loss': [],
+            'val_loss': [],
+            'train_acc': [],
+            'val_acc': []
+        }
 
     def train_epoch(self):
+        """Run one training epoch."""
         self.model.train()
         losses = []
         all_preds = []
@@ -68,6 +67,7 @@ class Trainer:
         return avg_loss, accuracy
 
     def evaluate(self, dataloader):
+        """Evaluate without updating weights."""
         self.model.eval()
         losses = []
         all_preds = []
@@ -96,6 +96,7 @@ class Trainer:
         best_score = float('-inf')
         self.best_checkpoint_path = f"{self.output_dir}/best_model.pt"
         valid_metrics = {'val_acc', 'val_f1'}
+
         if best_metric not in valid_metrics:
             raise ValueError(f"best_metric must be one of {valid_metrics}")
 
@@ -112,6 +113,7 @@ class Trainer:
             print(f"Train Loss: {train_loss:.4f}, Acc: {train_acc:.4f}")
             print(f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, F1: {val_f1:.4f}")
 
+            # Keep the best validation model, not just the last epoch.
             score = val_acc if best_metric == 'val_acc' else val_f1
             if save_best and score > best_score:
                 best_score = score
@@ -132,6 +134,7 @@ class Trainer:
                         val_f1=None, best_metric=None):
         if not self.save_artifacts:
             return
+
         torch.save({
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
@@ -145,7 +148,8 @@ class Trainer:
 
     def load_checkpoint(self, path=None):
         if path is None:
-            path = getattr(self, 'best_checkpoint_path', f"{self.output_dir}/best_model.pt")
+            path = getattr(self, 'best_checkpoint_path',
+                           f"{self.output_dir}/best_model.pt")
 
         checkpoint = torch.load(path, map_location=self.device)
         self.model.load_state_dict(checkpoint['model_state_dict'])
@@ -155,6 +159,7 @@ class Trainer:
         val_acc = checkpoint.get('val_acc')
         val_f1 = checkpoint.get('val_f1')
         best_metric = checkpoint.get('best_metric')
+
         if epoch is not None and val_acc is not None and val_f1 is not None:
             print(
                 f"Loaded checkpoint from epoch {epoch} "
@@ -165,25 +170,33 @@ class Trainer:
             print(f"Loaded checkpoint from {path}")
 
     def save_history(self):
+        """Save the loss/accuracy curves as JSON."""
         if not self.save_artifacts:
             return
+
         with open(f"{self.output_dir}/training_history.json", 'w') as f:
             json.dump(self.history, f)
 
     def plot_training_curves(self):
+        """Save a simple loss/accuracy plot."""
         if not self.save_artifacts:
             return
+
         fig, axes = plt.subplots(1, 2, figsize=(12, 4))
         axes[0].plot(self.history['train_loss'], label='Train')
         axes[0].plot(self.history['val_loss'], label='Val')
-        axes[0].set_title('Loss'); axes[0].legend()
+        axes[0].set_title('Loss')
+        axes[0].legend()
         axes[1].plot(self.history['train_acc'], label='Train')
         axes[1].plot(self.history['val_acc'], label='Val')
-        axes[1].set_title('Accuracy'); axes[1].legend()
+        axes[1].set_title('Accuracy')
+        axes[1].legend()
         plt.savefig(f"{self.output_dir}/training_curves.png")
         plt.close()
 
-    def evaluate_test(self, class_names=['Negative', 'Positive'], plot_confusion_matrix=True):
+    def evaluate_test(self, class_names=['Negative', 'Positive'],
+                      plot_confusion_matrix=True):
+        """Final evaluation on the test set."""
         _, accuracy, f1, preds, labels = self.evaluate(self.test_loader)
         print(f"\nTest Accuracy: {accuracy:.4f}")
         print(f"Test F1 Score: {f1:.4f}")
@@ -194,14 +207,20 @@ class Trainer:
             cm = confusion_matrix(labels, preds)
             plt.figure(figsize=(8, 6))
             sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-                       xticklabels=class_names, yticklabels=class_names)
+                        xticklabels=class_names, yticklabels=class_names)
             plt.title('Confusion Matrix')
             plt.ylabel('True')
             plt.xlabel('Predicted')
+
             if self.save_artifacts:
                 plt.savefig(f"{self.output_dir}/confusion_matrix.png")
                 plt.close()
             else:
                 plt.show()
 
-        return {'accuracy': accuracy, 'f1': f1, 'predictions': preds, 'labels': labels}
+        return {
+            'accuracy': accuracy,
+            'f1': f1,
+            'predictions': preds,
+            'labels': labels
+        }

@@ -1,95 +1,92 @@
-# Fine-tuning BERT for Sentiment Analysis on IMDb Reviews
+# Fine-tuning BERT for IMDb Sentiment Analysis
 
-### Team Members
+## Problem and Dataset
 
-## Problem & Dataset
 
-This project focuses on sentiment analysis, where the goal is to classify movie reviews as positive or negative.
+Group members :
 
-We use the IMDb movie review dataset, which contains:
+António Santos anms@itu.dk
+Francisco Oliveira faol@itu.dk
+Henrique Aleixo hale@itu.dk
 
-50,000 reviews (balanced)
-Binary labels (positive/negative)
-Long-form text (often up to several hundred words)
-Key challenges:
-Long sequences (important for BERT input length)
-Mixed sentiment within a single review
-Informal language and sarcasm
-## Method
 
-We compare four models with increasing complexity:
+This project studies binary sentiment analysis on the IMDb movie review dataset. The task is to classify each review as positive or negative.
 
-1. MLP (Baseline)
-Mean-pooled embeddings + feedforward network
-Ignores word order
-2. LSTM (Sequential baseline)
-Bidirectional LSTM
-Captures sequential dependencies
-3. Frozen BERT
-Pre-trained BERT used as feature extractor
-Only classification head is trained
-4. Fine-tuned BERT
-Full model is trained on IMDb
-Adapts representations to sentiment task
-## Training setup
-Model: bert-base-uncased
-Max length: 256
-Batch size: 16
-Learning rate: 2e-5
-Epochs: 4
+We use the full labeled IMDb dataset:
 
-We experimented with different learning rates and sequence lengths to optimize performance.
+- 25,000 training reviews
+- 25,000 test reviews
+- balanced positive/negative labels
+- long-form reviews, several hundred words
+
+The training split is divided into 22,500 training examples and 2,500 validation examples using a stratified random split.
+
+## Methods
+
+We compare classical, scratch-trained, and BERT-based approaches:
+
+| Model | Purpose |
+| TF-IDF + Logistic Regression | Classical bag-of-words baseline |
+| MLP | Neural baseline trained from scratch |
+| LSTM | Sequential neural baseline trained from scratch |
+| Frozen BERT | Pretrained BERT as fixed feature extractor |
+| Partial BERT | Fine-tune only the last 2 BERT layers, pooler, and classifier |
+| Fine-tuned BERT | Fine-tune all BERT layers and classifier |
+
+The BERT models use `bert-base-uncased`, maximum sequence length 256, batch size 16, and validation-F1
 
 ## Results
-Accuracy Comparison
-Model	Accuracy
-MLP	XX%
-LSTM	XX%
-Frozen BERT	XX%
-Fine-tuned BERT	XX%
-Key Observations
-BERT-based models significantly outperform traditional baselines
-Fine-tuning improves performance over frozen BERT
-LSTM captures sequence information but struggles with long-range dependencies
-## Error Analysis (IMPORTANT – easy marks)
 
-Examples of misclassified reviews:
+Saved test-set results:
 
-Mixed sentiment:
-“The acting was great but the plot was boring”
-Sarcasm:
-“Yeah, this was totally the best movie ever…”
-Long reviews:
-Important sentiment appears late in the text
-## Discussion
-What worked well:
-Fine-tuned BERT achieved the best performance
-Increasing sequence length improved results
-Pre-trained models significantly reduce training effort
-Limitations:
-Training time is high (BERT models are expensive)
-Some errors remain due to sarcasm and complex language
-Baselines benefited from BERT tokenization (may affect fairness)
+| Model | Accuracy | F1 |
+| BERT Fine-tuned | 0.91652 | 0.91651 |
+| BERT Partial | 0.91440 | 0.91439 |
+| TF-IDF + LogReg | 0.89372 | 0.89372 |
+| LSTM | 0.86328 | 0.86324 |
+| MLP | 0.84672 | 0.84662 |
+| BERT Frozen | 0.80164 | 0.80109 |
 
-Future improvements:
-Try RoBERTa or larger models
-Use longer sequence lengths (512)
-Apply data augmentation
-Experiment with partial fine-tuning
+Main observations:
+
+- Full BERT fine-tuning performs best.
+- Partial fine-tuning is very close to full fine-tuning while training far fewer parameters.
+- TF-IDF + Logistic Regression is a strong classical baseline.
+- Frozen BERT performs much worse than fine-tuned BERT, showing that task-specific adaptation matters.
+- MLP and LSTM baselines overfit more easily because they are trained from scratch.
+
+## Qualitative Analysis
+
+The notebook includes qualitative error analysis for the fine-tuned BERT model. It inspects misclassified reviews and highlights likely difficult cases:
+
+- very long reviews where 256-token truncation may hide decisive sentiment
+- mixed or ambiguous sentiment
+- negation-heavy reviews
+- HTML/noisy formatting
+- dataset label ambiguity from forcing nuanced opinions into binary classes
+
+Example outputs are saved to `results/bert_finetuned/error_analysis_examples.csv`. so we can analyse them beter.
+
 ## Repository Structure
-├── main.ipynb
-├── model.py
-├── data/
-├── results/
-└── README.md
+
+notebooks/main.ipynb       Main notebook
+src/model.py               BERT, LSTM, and MLP model definitions
+src/tokenizer.py           BERT tokenizer wrapper and PyTorch DataLoaders
+src/trainer.py             Training, evaluation, checkpointing, and plots
+results/                   Saved metrics, histories, plots, and error examples
+figures/                   Dataset exploration figures
+
+
 ## Reproducibility
 
-To run the project:
+Install dependencies:
 
+```bash
 pip install -r requirements.txt
+```
 
-Then run:
+Then run the notebook:
 
-python main.py
-
-or open the notebook.
+```text
+notebooks/main.ipynb
+```
