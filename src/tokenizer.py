@@ -98,7 +98,6 @@ class SentimentDataset(Dataset):
 def create_dataloaders(train_texts, train_labels, val_texts, val_labels,
                        test_texts, test_labels, tokenizer,
                        batch_size=16, max_length=512, num_workers=0):
-    # First wrap the raw texts in our PyTorch Dataset class.
     train_dataset = SentimentDataset(train_texts, train_labels, tokenizer,
                                      max_length)
     val_dataset = SentimentDataset(val_texts, val_labels, tokenizer,
@@ -106,7 +105,6 @@ def create_dataloaders(train_texts, train_labels, val_texts, val_labels,
     test_dataset = SentimentDataset(test_texts, test_labels, tokenizer,
                                     max_length)
 
-    # Then make DataLoaders so the trainer can loop over batches.
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,

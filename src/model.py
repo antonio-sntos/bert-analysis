@@ -21,7 +21,7 @@ class BERTSentimentClassifier(nn.Module):
 
     def forward(self, input_ids, attention_mask):
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
-        # pooler_output is BERT's sentence-level representation.
+        # pooler_output is the sentence-level representation.
         pooled_output = outputs.pooler_output
         pooled_output = self.dropout(pooled_output)
         return self.classifier(pooled_output)

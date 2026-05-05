@@ -113,7 +113,7 @@ class Trainer:
             print(f"Train Loss: {train_loss:.4f}, Acc: {train_acc:.4f}")
             print(f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, F1: {val_f1:.4f}")
 
-            # Keep the best validation model, not just the last epoch.
+            # keep the best validation model, not just the last epoch.
             score = val_acc if best_metric == 'val_acc' else val_f1
             if save_best and score > best_score:
                 best_score = score
