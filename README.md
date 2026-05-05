@@ -65,7 +65,7 @@ The notebook includes qualitative error analysis for the fine-tuned BERT model. 
 - HTML/noisy formatting
 - dataset label ambiguity from forcing nuanced opinions into binary classes
 
-Example outputs are saved to `results/bert_finetuned/error_analysis_examples.csv`. so we can analyse them beter.
+Example outputs are saved to results/bert_finetuned/error_analysis_examples.csv so we can analyse them beter.
 
 ## Repository Structure
 
