@@ -26,6 +26,7 @@ The training split is divided into 22,500 training examples and 2,500 validation
 We compare classical, scratch-trained, and BERT-based approaches:
 
 | Model | Purpose |
+| ---- | ---- |
 | TF-IDF + Logistic Regression | Classical bag-of-words baseline |
 | MLP | Neural baseline trained from scratch |
 | LSTM | Sequential neural baseline trained from scratch |
@@ -40,6 +41,7 @@ The BERT models use `bert-base-uncased`, maximum sequence length 256, batch size
 Saved test-set results:
 
 | Model | Accuracy | F1 |
+| ---- | ---- | ---- | 
 | BERT Fine-tuned | 0.91652 | 0.91651 |
 | BERT Partial | 0.91440 | 0.91439 |
 | TF-IDF + LogReg | 0.89372 | 0.89372 |
