@@ -23,7 +23,7 @@ The training split is divided into 22,500 training examples and 2,500 validation
 
 ## Methods
 
-We compare classical, scratch-trained, and BERT-based approaches:
+We compare classical models trained from scratch and BERT-based approaches:
 
 | Model | Purpose |
 | ---- | ---- |
